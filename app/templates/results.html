@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Файл: {{ filename }}</h2>
+  <form action="/api/analyze" method="post">
+    <input type="hidden" name="file_id" value="{{ file_id }}" />
+    <button type="submit">Запустить анализ</button>
+  </form>
+  {% if message %}
+    <p class="muted">{{ message }}</p>
+  {% endif %}
+</section>
+
+{% if analysis %}
+<section class="card">
+  <h3>Итог</h3>
+  <p><b>Возрастной рейтинг:</b> {{ analysis.summary.age_rating }} (макс. строгость: {{ analysis.summary.max_severity }})</p>
+  <p><b>Всего сцен:</b> {{ analysis.summary.total_scenes }}</p>
+
+  <table>
+    <thead>
+      <tr><th>Категория</th><th>Эпизодов</th><th>% сцен</th><th>Строгость</th></tr>
+    </thead>
+    <tbody>
+      {% for c in analysis.summary.categories %}
+      <tr>
+        <td>{{ c.category }}</td>
+        <td>{{ c.count_episodes }}</td>
+        <td>{{ c.percent_scenes }}%</td>
+        <td><span class="sev sev-{{ c.overall_severity|lower }}">{{ c.overall_severity }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p>
+    <a class="btn" href="/api/report/html/{{ file_id }}">Скачать отчёт (HTML)</a>
+    <a class="btn" href="/api/report/pdf/{{ file_id }}">Скачать отчёт (PDF)</a>
+  </p>
+</section>
+
+<section class="card">
+  <h3>Сцены</h3>
+  <div class="scenes">
+    {% for s in analysis.scenes %}
+      <details class="scene">
+        <summary>
+          <b>Сцена {{ s.index + 1 }}</b>
+          {% set sev = "None" %}
+          {% for e in analysis.episodes %}
+            {% if e.scene_id == s.id and not e.is_fp %}
+              {% if sev == "None" or e.severity in ["Moderate","Severe"] %}
+                {% set sev = e.severity %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          <span class="sev sev-{{ sev|lower }}">{{ sev }}</span>
+        </summary>
+        <pre class="scene-text">{{ s.text }}</pre>
+
+        <h4>Эпизоды</h4>
+        <ul>
+          {% for e in analysis.episodes %}
+            {% if e.scene_id == s.id %}
+              <li>
+                <b>{{ e.category }}</b> — <span class="sev sev-{{ e.severity|lower }}">{{ e.severity }}</span>
+                {% if e.is_fp %}<i>(исключён)</i>{% endif %}<br/>
+                <code>{{ e.quote }}</code><br/>
+                <small>Причина: {{ e.reason }} | ID: {{ e.id }}</small>
+                <form action="/api/mark-fp" method="post" style="display:inline">
+                  <input type="hidden" name="file_id" value="{{ analysis.file_id }}"/>
+                  <input type="hidden" name="episode_id" value="{{ e.id }}"/>
+                  <button type="submit">Пометить FP</button>
+                </form>
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+
+        <h4>Добавить пропущенный эпизод (FN → добавить)</h4>
+        <form action="/api/add-episode" method="post">
+          <input type="hidden" name="file_id" value="{{ analysis.file_id }}"/>
+          <input type="hidden" name="scene_id" value="{{ s.id }}"/>
+          <label>Категория:
+            <select name="category">
+              <option>profanity</option>
+              <option>violence</option>
+              <option>erotica</option>
+              <option>alcohol_drugs</option>
+              <option>scary</option>
+            </select>
+          </label>
+          <label>Строгость:
+            <select name="severity">
+              <option> Mild </option>
+              <option> Moderate </option>
+              <option> Severe </option>
+            </select>
+          </label>
+          <label>Цитата: <input name="quote" required /></label>
+          <label>Причина: <input name="reason" required /></label>
+          <button type="submit">Добавить</button>
+        </form>
+
+        <h4>Редактор сцены</h4>
+        <form id="edit-{{ s.id }}" onsubmit="return submitPatch('{{ analysis.file_id }}','{{ s.id }}')">
+          <textarea name="new_text" rows="6" style="width:100%">{{ s.text }}</textarea>
+          <button type="submit">Сохранить и переоценить сцену</button>
+        </form>
+      </details>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+async function submitPatch(file_id, scene_id){
+  const form = document.getElementById('edit-'+scene_id);
+  const new_text = form.querySelector('textarea[name="new_text"]').value;
+  const payload = { file_id, edits: [{scene_id, new_text}] };
+  const r = await fetch('/api/patch', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if(r.ok){ location.reload(); }
+  return false;
+}
+</script>
+{% endif %}
+{% endblock %}
