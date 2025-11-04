@@ -1,0 +1,25 @@
+version: 1
+# Мэппинг максимальной строгости по категориям к возрастному рейтингу
+# Можно тонко настроить по категориям (некоторые категории влияют сильнее)
+default:
+  None: "0+"
+  Mild: "6+"
+  Moderate: "12+"
+  Severe: "18+"
+
+overrides:
+  profanity:
+    Moderate: "16+"
+    Severe: "18+"
+  violence:
+    Moderate: "16+"
+    Severe: "18+"
+  erotica:
+    Moderate: "16+"
+    Severe: "18+"
+  alcohol_drugs:
+    Moderate: "16+"
+    Severe: "18+"
+  scary:
+    Moderate: "12+"
+    Severe: "16+"
