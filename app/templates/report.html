@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <title>Отчёт — {{ analysis.filename }}</title>
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; margin: 24px; }
+    h1,h2,h3 { margin: 0.2em 0; }
+    table { width:100%; border-collapse: collapse; margin: 12px 0; }
+    th,td { border: 1px solid #ddd; padding: 6px; font-size: 12px; }
+    .sev-none { color: #444; }
+    .sev-mild { color: #4a8; }
+    .sev-moderate { color: #e80; }
+    .sev-severe { color: #e22; }
+    .small { color:#555; font-size: 12px; }
+    pre { white-space: pre-wrap; font-size: 12px; background:#f7f7f7; padding:8px; border:1px solid #eee; }
+  </style>
+</head>
+<body>
+  <h1>Отчёт по анализу сценария</h1>
+  <div class="small">{{ analysis.filename }} — file_id: {{ analysis.file_id }}</div>
+
+  <h2>Итог</h2>
+  <p><b>Возрастной рейтинг:</b> {{ analysis.summary.age_rating }}; макс. строгость: {{ analysis.summary.max_severity }}</p>
+  <p><b>Всего сцен:</b> {{ analysis.summary.total_scenes }}</p>
+
+  <h3>Категории</h3>
+  <table>
+    <thead><tr><th>Категория</th><th>Эпизодов</th><th>% сцен</th><th>Строгость</th></tr></thead>
+    <tbody>
+      {% for c in analysis.summary.categories %}
+      <tr>
+        <td>{{ c.category }}</td>
+        <td>{{ c.count_episodes }}</td>
+        <td>{{ c.percent_scenes }}%</td>
+        <td class="sev-{{ c.overall_severity|lower }}">{{ c.overall_severity }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Хронология сцен</h3>
+  {% for s in analysis.scenes %}
+    <h4>Сцена {{ s.index + 1 }} ({{ s.id }})</h4>
+    <pre>{{ s.text }}</pre>
+    <table>
+      <thead><tr><th>Категория</th><th>Строгость</th><th>Цитата</th><th>Причина</th><th>ID</th></tr></thead>
+      <tbody>
+      {% for e in analysis.episodes %}
+        {% if e.scene_id == s.id and not e.is_fp %}
+        <tr>
+          <td>{{ e.category }}</td>
+          <td>{{ e.severity }}</td>
+          <td>{{ e.quote }}</td>
+          <td>{{ e.reason }}</td>
+          <td>{{ e.id }}</td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+</body>
+</html>
