@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ title or "Age Rating Analyzer" }}</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</head>
+<body>
+<header>
+  <h1>Age Rating Analyzer (RU)</h1>
+  <nav>
+    <a href="/">Главная</a>
+  </nav>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+<footer>
+  <small>Локальный оффлайн‑анализатор. Версия 1.0.0</small>
+</footer>
+</body>
+</html>
