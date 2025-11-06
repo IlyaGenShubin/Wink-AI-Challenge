@@ -3,3 +3,6 @@
 ## Быстрый старт
 ```bash
 docker-compose up --build
+
+После запуска сервис будет доступен по адресу:
+http://localhost:8000
